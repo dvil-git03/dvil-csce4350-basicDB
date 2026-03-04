@@ -15,7 +15,7 @@
 #include <sstream>
 #include <string>
 
-using std::vector, std::string;
+using std::vector, std::string, std::cout, std::endl;
 
 struct Node {
     string key;
@@ -31,7 +31,7 @@ class HashIndex {
     public:
         HashIndex();
         bool set(string key, string value);
-        bool get(string key);
+        string get(string key);
 };
 
 
