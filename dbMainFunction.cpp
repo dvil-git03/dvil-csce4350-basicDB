@@ -7,8 +7,6 @@
 
 #include "dbSetup.h"
 
-using std::cout, std::endl, std::cin, std::getline, std::stringstream, std::cerr;
-
 /*
 
     Main function to begin running our database, we initialze our database object,
@@ -20,23 +18,23 @@ using std::cout, std::endl, std::cin, std::getline, std::stringstream, std::cerr
 int main()
 {
     KeyValueStorage database;
-    string line;
+    std::string line;
 
-    cout << "Simple Databse for Key / Value Pairs" << "\n";
-    cout << "Please enter SET [key] [value], GET [key] or EXIT." << endl;
+    std::cout << "Simple Databse for Key / Value Pairs" << std::endl;
+    std::cout << "Please enter SET [key] [value], GET [key] or EXIT." << std::endl;
 
     // A input parser that takes in our STDIN and inputs it to our line string,
     // then using this in a stringstream to parse our inputs.
 
-    while (getline(cin, line))
+    while (std::getline(std::cin, line))
     {
         if (line.empty())
             continue;
         if (line == "EXIT" || line == "exit")
             break; // We exit the loop, thus closing the program.
 
-        stringstream ss(line);
-        string command, key, value; // For example, if we set a key/value pair, we would use SET example pair.
+        std::stringstream ss(line);
+        std::string command, key, value; // For example, if we set a key/value pair, we would use SET example pair.
         ss >> command;
 
         if (command == "SET" || command == "set")
@@ -45,7 +43,7 @@ int main()
             if (!key.empty() && !value.empty()) // Ensuring that there is a key and a value in our input in the STDIN.
                 database.setKeyVal(key, value);
             else
-                cerr << "ERROR" << endl;
+                std::cerr << "ERROR" << std::endl;
         }
         else if (command == "GET" || command == "get")
         {
@@ -53,7 +51,7 @@ int main()
             if (!key.empty()) // Same situation as previously, we are insuring our value is an input.
                 database.getKeyVal(key);
             else
-                cerr << "ERROR" << endl;
+                std::cerr << "ERROR" << std::endl;
         }
     }
 

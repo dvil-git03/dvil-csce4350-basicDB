@@ -9,16 +9,15 @@
 
 #include "dbSetup.h"
 
-using std::cout, std::endl, std::cin, std::ifstream, std::ofstream;
 
 // Iterate through the string provided, without modifying it,
 // for our simple hash function which takes the hash value and
 // multiplies by 31, a prime number and adds the ASCII value of
 // the char in the string.
 
-int HashIndex::hashFunction(const string &key)
+int HashIndex::hashFunction(const std::string &key)
 {
-    unsigned int hash = 0;
+    unsigned int hash = 0; // We use an unsigned int to prevent our hash function from generating a negative value which causes undefined behavior.
 
     for (char c : key)
     {
@@ -35,7 +34,7 @@ HashIndex::HashIndex() : hashTable(SIZE) {}
 // Set method that takes in a key and value to insert into our
 // hash table index, so we can create a K/V pair in our database.
 
-bool HashIndex::setKeyValue(string key, string value)
+void HashIndex::setKeyValue(std::string key, std::string value)
 {
     int index = hashFunction(key);
     int startIndex = index;
@@ -51,18 +50,18 @@ bool HashIndex::setKeyValue(string key, string value)
             hashTable[index].key = key;
             hashTable[index].val = value;
             hashTable[index].occupied = true;
-            return true;
+            return;
         }
         index = (index + 1) % SIZE; // Linear probing through the table, until we find an empty space if needed.
     } while (index != startIndex);
-    return false;
+    return;
 }
 
 // Method to retrieve a value from a key, takes in a key and does a
 // similar method to the previous get method, but instead returns the
 // value, in this case a string.
 
-string HashIndex::getValue(string key)
+std::string HashIndex::getValue(std::string key)
 {
     int index = hashFunction(key);
     int startIndex = index;
@@ -103,11 +102,11 @@ KeyValueStorage::KeyValueStorage()
 
 void KeyValueStorage::loadLogFile()
 {
-    ifstream fileLoad(db);
+    std::ifstream fileLoad(db);
     if (!fileLoad.is_open())
         return;
 
-    string key, value;
+    std::string key, value;
 
     while (fileLoad >> key >> value)
     {
@@ -121,9 +120,9 @@ void KeyValueStorage::loadLogFile()
 
 // KEY [SPACE] VALUE[NEWLINE]...
 
-void KeyValueStorage::saveLog(string key, string val)
+void KeyValueStorage::saveLog(std::string key, std::string val)
 {
-    ofstream saveFile(db, std::ios::app); // We use ios::app, as to set our I/O operations as append mode, as we don't want to overwrite data.
+    std::ofstream saveFile(db, std::ios::app); // We use ios::app, as to set our I/O operations as append mode, as we don't want to overwrite data.
     if (saveFile.fail())
         return;
     else if (saveFile.is_open())
@@ -137,17 +136,17 @@ void KeyValueStorage::saveLog(string key, string val)
 // save our changes to memory. In case we have an
 // error, we will still have our changes on disk.
 
-void KeyValueStorage::setKeyVal(string key, string val)
+void KeyValueStorage::setKeyVal(std::string key, std::string val)
 {
     saveLog(key, val);
     index.setKeyValue(key, val);
-    cout << "OK" << endl;
+    std::cout << "OK" << std::endl;
 }
 
 // Simple function to print out our result.
 // If our key is empty, we print out a fail result.
 
-void KeyValueStorage::getKeyVal(string key)
+void KeyValueStorage::getKeyVal(std::string key)
 {
-    cout << index.getValue(key) << endl;
+    std::cout << index.getValue(key) << std::endl;
 }

@@ -15,15 +15,14 @@
 #include <sstream>
 #include <string>
 
-using std::vector, std::string;
 
 // Unit of storage for each item in our database. Stores our key/value pair
 // and a boolean value to check if a unit is empty or not.
 
 struct Node
 {
-    string key;
-    string val;
+    std::string key;
+    std::string val;
     bool occupied = false;
 };
 
@@ -35,13 +34,13 @@ class HashIndex
 {
 private:
     static const int SIZE = 1024; // Probably okay for this project, but not in a real database software.
-    vector<Node> hashTable;
-    int hashFunction(const string &key);
+    std::vector<Node> hashTable;
+    int hashFunction(const std::string &key);
 
 public:
     HashIndex();
-    bool setKeyValue(string key, string value);
-    string getValue(string key);
+    void setKeyValue(std::string key, std::string value);
+    std::string getValue(std::string key);
 };
 
 // Class for our K/V pair storage system, using our previous hash table
@@ -53,14 +52,14 @@ class KeyValueStorage
 {
 private:
     HashIndex index;
-    string db;
-    void saveLog(string key, string val);
+    std::string db;
+    void saveLog(std::string key, std::string val);
     void loadLogFile();
 
 public:
     KeyValueStorage();
-    void setKeyVal(string key, string val);
-    void getKeyVal(string key);
+    void setKeyVal(std::string key, std::string val);
+    void getKeyVal(std::string key);
 };
 
 #endif
