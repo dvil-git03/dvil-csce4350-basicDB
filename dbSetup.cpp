@@ -35,7 +35,7 @@ HashIndex::HashIndex() : hashTable(SIZE) {}
 // Set method that takes in a key and value to insert into our
 // hash table index, so we can create a K/V pair in our database.
 
-bool HashIndex::set(string key, string value)
+bool HashIndex::setKeyValue(string key, string value)
 {
     int index = hashFunction(key);
     int startIndex = index;
@@ -62,7 +62,7 @@ bool HashIndex::set(string key, string value)
 // similar method to the previous get method, but instead returns the
 // value, in this case a string.
 
-string HashIndex::get(string key)
+string HashIndex::getValue(string key)
 {
     int index = hashFunction(key);
     int startIndex = index;
@@ -76,7 +76,7 @@ string HashIndex::get(string key)
 
         index = (index + 1) % SIZE;
     } while (index != startIndex); // Linear probing through the table, until we find an empty space if needed.
-    return "";
+    return "NOT FOUND";
 }
 
 /*
@@ -103,18 +103,16 @@ KeyValueStorage::KeyValueStorage()
 
 void KeyValueStorage::loadLogFile()
 {
-    ifstream file(db);
-    if (!file.is_open())
+    ifstream fileLoad(db);
+    if (!fileLoad.is_open())
         return;
 
     string key, value;
 
-    while (file >> key >> value)
+    while (fileLoad >> key >> value)
     {
-        index.set(key, value);
+        index.setKeyValue(key, value);
     }
-
-    cout << "Loaded saved database." << endl;
 }
 
 // We save the file to disk, using our previously named db string,
@@ -125,14 +123,14 @@ void KeyValueStorage::loadLogFile()
 
 void KeyValueStorage::saveLog(string key, string val)
 {
-    ofstream save(db, std::ios::app); // We use ios::app, as to set our I/O operations as append mode, as we don't want to overwrite data.
-    if (save.fail())
+    ofstream saveFile(db, std::ios::app); // We use ios::app, as to set our I/O operations as append mode, as we don't want to overwrite data.
+    if (saveFile.fail())
         return;
-    else if (save.is_open())
+    else if (saveFile.is_open())
     {
-        save << key << " " << val << "\n"; // We use \n instead of endl, as endl flushes the cache and can be slow.
+        saveFile << key << " " << val << "\n"; // We use \n instead of endl, as endl flushes the cache and can be slow.
     }
-    save.close(); // We close to prevent any potential corruption while having a file opened while the program does nothing.
+    saveFile.flush(); // We flush to disk to ensure our changes are saved.
 }
 
 // To save our Key Values, we save to disk, then
@@ -142,7 +140,8 @@ void KeyValueStorage::saveLog(string key, string val)
 void KeyValueStorage::setKeyVal(string key, string val)
 {
     saveLog(key, val);
-    index.set(key, val);
+    index.setKeyValue(key, val);
+    cout << "OK" << endl;
 }
 
 // Simple function to print out our result.
@@ -150,10 +149,5 @@ void KeyValueStorage::setKeyVal(string key, string val)
 
 void KeyValueStorage::getKeyVal(string key)
 {
-    cout << index.get(key) << endl;
-    if (key == "")
-    {
-        cout << "ERROR: No specified key. No value returned.";
-        return;
-    }
+    cout << index.getValue(key) << endl;
 }

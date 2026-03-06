@@ -40,8 +40,8 @@ private:
 
 public:
     HashIndex();
-    bool set(string key, string value);
-    string get(string key);
+    bool setKeyValue(string key, string value);
+    string getValue(string key);
 };
 
 // Class for our K/V pair storage system, using our previous hash table
