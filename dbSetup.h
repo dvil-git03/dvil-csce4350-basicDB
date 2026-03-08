@@ -14,7 +14,10 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <optional>
 
+// Constant definition for our hash index's vector size.
+constexpr int SIZE = 1024;
 
 // Unit of storage for each item in our database. Stores our key/value pair
 // and a boolean value to check if a unit is empty or not.
@@ -33,14 +36,13 @@ struct Node
 class HashIndex
 {
 private:
-    static const int SIZE = 1024; // Probably okay for this project, but not in a real database software.
     std::vector<Node> hashTable;
     int hashFunction(const std::string &key);
 
 public:
     HashIndex();
-    void setKeyValue(std::string key, std::string value);
-    std::string getValue(std::string key);
+    void setKeyValue(const std::string &key, const std::string &value);
+    std::optional<std::string> getValueFromKey(const std::string &key);
 };
 
 // Class for our K/V pair storage system, using our previous hash table
@@ -53,13 +55,13 @@ class KeyValueStorage
 private:
     HashIndex index;
     std::string db;
-    void saveLog(std::string key, std::string val);
+    void saveLogFile(const std::string &key, const std::string &val);
     void loadLogFile();
 
 public:
     KeyValueStorage();
-    void setKeyVal(std::string key, std::string val);
-    void getKeyVal(std::string key);
+    void setKeyValueDB(const std::string &key, const std::string &val);
+    void getKeyValueDB(const std::string &key);
 };
 
 #endif

@@ -9,7 +9,6 @@
 
 #include "dbSetup.h"
 
-
 // Iterate through the string provided, without modifying it,
 // for our simple hash function which takes the hash value and
 // multiplies by 31, a prime number and adds the ASCII value of
@@ -17,43 +16,40 @@
 
 int HashIndex::hashFunction(const std::string &key)
 {
-    unsigned int hash = 0; // We use an unsigned int to prevent our hash function from generating a negative value which causes undefined behavior.
+    unsigned int hash = 0; // We use an unsigned int to prevent our hash function from generating a negative value which may cause undefined behavior.
 
     for (char c : key)
     {
-        hash = (hash * 31) + c;
+        hash = (hash * 31) + static_cast<unsigned char>(c); // We also convert our character into an unsigned character to prevent negative values which may cause undefined behavior.
     }
-    return hash % SIZE;
+    return hash % SIZE; // Previously, we defined SIZE as 1024.
 }
 
-// Constructor intializes the vector with our previously defined
-// size in our header file.
+// Constructor initializes the vector with our previously defined
+// size in our header file. This was done using define as
 
 HashIndex::HashIndex() : hashTable(SIZE) {}
 
 // Set method that takes in a key and value to insert into our
 // hash table index, so we can create a K/V pair in our database.
 
-void HashIndex::setKeyValue(std::string key, std::string value)
+void HashIndex::setKeyValue(const std::string &key, const std::string &val)
 {
     int index = hashFunction(key);
-    int startIndex = index;
+    int visited = 0;
 
-    // We have a do-while loop that checks if the key is occupied or
-    // the key we are giving this method will be overwritten, then we
-    // set the Node struct in the table with the key and value, and
-    // mark the space as occupied.
-    do
+    while (visited < SIZE)
     {
-        if (hashTable[index].occupied == false || hashTable[index].key == key)
+        if (hashTable[index].occupied == false || hashTable[index].key == key) // If we find an empty spot OR we wish to overwrite an entry, we insert our data into the table.
         {
             hashTable[index].key = key;
-            hashTable[index].val = value;
+            hashTable[index].val = val;
             hashTable[index].occupied = true;
             return;
         }
-        index = (index + 1) % SIZE; // Linear probing through the table, until we find an empty space if needed.
-    } while (index != startIndex);
+        index = (index + 1) % SIZE; // Linear probing through the table, until we find an empty space, this is only if a hash function makes a match.
+        visited++;
+    }
     return;
 }
 
@@ -61,26 +57,24 @@ void HashIndex::setKeyValue(std::string key, std::string value)
 // similar method to the previous get method, but instead returns the
 // value, in this case a string.
 
-std::string HashIndex::getValue(std::string key)
+std::optional<std::string> HashIndex::getValueFromKey(const std::string &key)
 {
     int index = hashFunction(key);
-    int startIndex = index;
+    int visited = 0;
 
-    do
+    while (visited < SIZE)
     {
-        if (hashTable[index].occupied == false)
-            break; // If the space is not occupied, we stop instantly and return an error.
-        if (hashTable[index].key == key)
+        if (hashTable[index].occupied && hashTable[index].key == key)
             return hashTable[index].val;
-
-        index = (index + 1) % SIZE;
-    } while (index != startIndex); // Linear probing through the table, until we find an empty space if needed.
-    return "NOT FOUND";
+        index = (index + 1) % SIZE; // Linear probing through the table, until we find an empty space, this is only if a hash function makes a match.
+        visited++;
+    }
+    return std::nullopt; // We return a nullopt, which means that our search did not result in a value being found from a key.
 }
 
 /*
 
-    Key / Value Pair Storage System, for our database.
+    Key / Value Pair Storage System for our database.
     This will use our previous index to store information
     into our database here, the index will allow us to search quickly,
     and this class will handle our requests to our index.
@@ -93,6 +87,9 @@ std::string HashIndex::getValue(std::string key)
 KeyValueStorage::KeyValueStorage()
 {
     db = "data.db";
+    std::ofstream touch(db, std::ios::app); // We run this to create our file and immediately close.
+    touch.close();
+
     loadLogFile();
 }
 
@@ -104,14 +101,32 @@ void KeyValueStorage::loadLogFile()
 {
     std::ifstream fileLoad(db);
     if (!fileLoad.is_open())
-        return;
-
-    std::string key, value;
-
-    while (fileLoad >> key >> value)
     {
-        index.setKeyValue(key, value);
+        std::cerr << "ERROR: Unable to load file." << std::endl;
+        exit(1);
     }
+    std::string line;
+
+    // We use a getline function to load our file, and a stringstream to parse our inputs,
+    // we ensure we also do not have empty inputs, then run our setKeyValue method to
+    // save our values into memory.
+
+    while (std::getline(fileLoad, line))
+    {
+        if (line.empty())
+            continue;
+
+        std::stringstream ss(line);
+        std::string key, value;
+
+        ss >> key >> value;
+
+        if (!key.empty() && !value.empty())
+            index.setKeyValue(key, value);
+    }
+
+    fileLoad.close();
+    return;
 }
 
 // We save the file to disk, using our previously named db string,
@@ -120,33 +135,43 @@ void KeyValueStorage::loadLogFile()
 
 // KEY [SPACE] VALUE[NEWLINE]...
 
-void KeyValueStorage::saveLog(std::string key, std::string val)
+void KeyValueStorage::saveLogFile(const std::string &key, const std::string &val)
 {
     std::ofstream saveFile(db, std::ios::app); // We use ios::app, as to set our I/O operations as append mode, as we don't want to overwrite data.
     if (saveFile.fail())
-        return;
+    {
+        std::cerr << "ERROR: Failed to save database." << std::endl;
+        exit(1);
+    }
     else if (saveFile.is_open())
     {
-        saveFile << key << " " << val << "\n"; // We use \n instead of endl, as endl flushes the cache and can be slow.
+        saveFile << key << " " << val << std::endl;
     }
     saveFile.flush(); // We flush to disk to ensure our changes are saved.
+    saveFile.close();
+    return;
 }
 
 // To save our Key Values, we save to disk, then
 // save our changes to memory. In case we have an
 // error, we will still have our changes on disk.
 
-void KeyValueStorage::setKeyVal(std::string key, std::string val)
+void KeyValueStorage::setKeyValueDB(const std::string &key, const std::string &val)
 {
-    saveLog(key, val);
+    saveLogFile(key, val);
     index.setKeyValue(key, val);
-    std::cout << "OK" << std::endl;
+    return;
 }
 
 // Simple function to print out our result.
 // If our key is empty, we print out a fail result.
 
-void KeyValueStorage::getKeyVal(std::string key)
+void KeyValueStorage::getKeyValueDB(const std::string &key)
 {
-    std::cout << index.getValue(key) << std::endl;
+    std::optional<std::string> result = index.getValueFromKey(key);
+    if (result)
+    {
+        std::cout << *result << std::endl;
+    }
+    return;
 }
